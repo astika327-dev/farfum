@@ -17,9 +17,22 @@ const QUERY = `query ProductList($first:Int!) {
 }`
 
 export async function getStaticProps() {
-  const data = await shopifyFetch(QUERY, { first: 12 })
-  const products = data.products.edges.map(e => e.node)
-  return { props: { products }, revalidate: 60 }
+  console.log('--- Starting getStaticProps for Home page ---');
+  try {
+    const data = await shopifyFetch(QUERY, { first: 12 });
+    if (!data || !data.products) {
+      console.error('ERROR: Invalid data structure received from Shopify:', data);
+      throw new Error('Invalid data structure from Shopify.');
+    }
+    const products = data.products.edges.map(e => e.node);
+    console.log(`SUCCESS: Fetched ${products.length} products for the Home page.`);
+    return { props: { products }, revalidate: 60 };
+  } catch (error) {
+    console.error('FATAL: getStaticProps failed for the Home page.', error);
+    // Re-throwing the error is important. It will cause the build to fail
+    // and surface the error in the Vercel build logs.
+    throw error;
+  }
 }
 
 export default function Home({ products }) {
